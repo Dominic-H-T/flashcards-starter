@@ -243,9 +243,10 @@
 
   <script>
     const STORAGE_KEY = 'flashcards.v1';
+    const REINSERT_OFFSET = 3;
 
     let cards = loadCards();
-    let currentIndex = 0;
+    let studyQueue = [...cards];
     let isFlipped = false;
 
     function loadCards() {
@@ -263,6 +264,12 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
     }
 
+    function startNewRound() {
+      studyQueue = [...cards];
+      isFlipped = false;
+      render();
+    }
+
     function addCard(front, back) {
       const newCard = {
         id: Date.now().toString(),
@@ -270,34 +277,31 @@
         back: back.trim()
       };
       cards.push(newCard);
+      studyQueue.push(newCard);
       saveCards();
-      // If this is the first card added, focus on it
-      if (cards.length === 1) {
-        currentIndex = 0;
-        isFlipped = false;
-      }
       render();
     }
 
     function flipCard() {
-      if (cards.length === 0) return;
+      if (studyQueue.length === 0) return;
       isFlipped = !isFlipped;
       renderCard();
     }
 
-    function nextCard() {
-      if (cards.length === 0) return;
-      currentIndex = (currentIndex + 1) % cards.length;
+    function markGotIt() {
+      if (studyQueue.length === 0) return;
+      studyQueue.shift();
       isFlipped = false;
       render();
     }
 
-    function markGotIt() {
-      nextCard();
-    }
-
     function markMissed() {
-      nextCard();
+      if (studyQueue.length === 0) return;
+      const missedCard = studyQueue.shift();
+      const insertIndex = Math.min(REINSERT_OFFSET, studyQueue.length);
+      studyQueue.splice(insertIndex, 0, missedCard);
+      isFlipped = false;
+      render();
     }
 
     function renderCard() {
@@ -311,17 +315,24 @@
         return;
       }
 
-      // Keep index safely in bounds
-      if (currentIndex >= cards.length) {
-        currentIndex = 0;
+      if (studyQueue.length === 0) {
+        studyArea.innerHTML = `
+          <div class="empty-state">
+            <h3 style="margin-bottom: 8px; font-size: 18px; color: var(--text);">Round complete!</h3>
+            <p style="margin-bottom: 16px;">You've reviewed all cards in this round.</p>
+            <button type="button" class="btn-primary" id="btn-restart">Study Again</button>
+          </div>
+        `;
+        document.getElementById('btn-restart').addEventListener('click', startNewRound);
+        return;
       }
 
-      const card = cards[currentIndex];
+      const card = studyQueue[0];
       const sideText = isFlipped ? card.back : card.front;
       const sideLabel = isFlipped ? 'Back' : 'Front';
 
       studyArea.innerHTML = `
-        <div class="counter">Card ${currentIndex + 1} of ${cards.length}</div>
+        <div class="counter">${studyQueue.length} card${studyQueue.length === 1 ? '' : 's'} left in this round</div>
         <div class="flashcard" id="active-card" role="button" tabindex="0">
           <span class="card-badge">${sideLabel}</span>
           <div class="card-text">${escapeHtml(sideText)}</div>
