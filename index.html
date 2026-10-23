@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card-bg: #ffffff;
+      --text: #1d1d1f;
+      --text-muted: #86868b;
+      --border: #d2d2d7;
+      --primary: #0071e3;
+      --primary-hover: #0077ed;
+      --success: #34c759;
+      --danger: #ff3b30;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .card-creator {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-creator h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 8px;
+      padding: 10px 16px;
+      border: none;
+      transition: background-color 0.15s, opacity 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .study-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .counter {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .flashcard {
+      width: 100%;
+      min-height: 220px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .flashcard:hover {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    .flashcard:active {
+      transform: scale(0.99);
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 14px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .card-text {
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .card-hint {
+      position: absolute;
+      bottom: 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .actions button {
+      flex: 1;
+      padding: 12px;
+      font-weight: 600;
+    }
+
+    .btn-missed {
+      background: #ffebe9;
+      color: var(--danger);
+      border: 1px solid rgba(255, 59, 48, 0.2);
+    }
+
+    .btn-missed:hover {
+      background: #ffdcd9;
+    }
+
+    .btn-got-it {
+      background: #e8f8ed;
+      color: var(--success);
+      border: 1px solid rgba(52, 199, 89, 0.2);
+    }
+
+    .btn-got-it:hover {
+      background: #d4f4dc;
+    }
+
+    .empty-state {
+      background: var(--card-bg);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Flashcards</h1>
+
+    <!-- Card creation form -->
+    <form class="card-creator" id="card-form">
+      <h2>Add New Card</h2>
+      <div class="form-group">
+        <label for="front-input">Front</label>
+        <input type="text" id="front-input" placeholder="e.g. Question or prompt" required>
+      </div>
+      <div class="form-group">
+        <label for="back-input">Back</label>
+        <input type="text" id="back-input" placeholder="e.g. Answer" required>
+      </div>
+      <button type="submit" class="btn-primary">Add Card</button>
+    </form>
+
+    <!-- Study container -->
+    <div class="study-area" id="study-area">
+      <!-- Injected by render() -->
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'flashcards.v1';
+
+    let cards = loadCards();
+    let currentIndex = 0;
+    let isFlipped = false;
+
+    function loadCards() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) return [];
+      try {
+        return JSON.parse(stored) || [];
+      } catch (e) {
+        console.error('Failed to parse stored flashcards', e);
+        return [];
+      }
+    }
+
+    function saveCards() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    }
+
+    function addCard(front, back) {
+      const newCard = {
+        id: Date.now().toString(),
+        front: front.trim(),
+        back: back.trim()
+      };
+      cards.push(newCard);
+      saveCards();
+      // If this is the first card added, focus on it
+      if (cards.length === 1) {
+        currentIndex = 0;
+        isFlipped = false;
+      }
+      render();
+    }
+
+    function flipCard() {
+      if (cards.length === 0) return;
+      isFlipped = !isFlipped;
+      renderCard();
+    }
+
+    function nextCard() {
+      if (cards.length === 0) return;
+      currentIndex = (currentIndex + 1) % cards.length;
+      isFlipped = false;
+      render();
+    }
+
+    function markGotIt() {
+      nextCard();
+    }
+
+    function markMissed() {
+      nextCard();
+    }
+
+    function renderCard() {
+      const studyArea = document.getElementById('study-area');
+      if (cards.length === 0) {
+        studyArea.innerHTML = `
+          <div class="empty-state">
+            No cards yet. Add your first card above to start studying!
+          </div>
+        `;
+        return;
+      }
+
+      // Keep index safely in bounds
+      if (currentIndex >= cards.length) {
+        currentIndex = 0;
+      }
+
+      const card = cards[currentIndex];
+      const sideText = isFlipped ? card.back : card.front;
+      const sideLabel = isFlipped ? 'Back' : 'Front';
+
+      studyArea.innerHTML = `
+        <div class="counter">Card ${currentIndex + 1} of ${cards.length}</div>
+        <div class="flashcard" id="active-card" role="button" tabindex="0">
+          <span class="card-badge">${sideLabel}</span>
+          <div class="card-text">${escapeHtml(sideText)}</div>
+          <span class="card-hint">Click to flip</span>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-missed" id="btn-missed">Missed it</button>
+          <button type="button" class="btn-got-it" id="btn-got-it">Got It</button>
+        </div>
+      `;
+
+      // Event listeners for study controls
+      document.getElementById('active-card').addEventListener('click', flipCard);
+      document.getElementById('btn-missed').addEventListener('click', markMissed);
+      document.getElementById('btn-got-it').addEventListener('click', markGotIt);
+    }
+
+    function render() {
+      renderCard();
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Form submission
+    const cardForm = document.getElementById('card-form');
+    const frontInput = document.getElementById('front-input');
+    const backInput = document.getElementById('back-input');
+
+    cardForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const front = frontInput.value;
+      const back = backInput.value;
+
+      if (!front || !back) return;
+
+      addCard(front, back);
+
+      frontInput.value = '';
+      backInput.value = '';
+      frontInput.focus();
+    });
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
+
